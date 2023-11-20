@@ -12,19 +12,37 @@ public class ButtonExtender : MonoBehaviour, IPointerDownHandler, IPointerUpHand
 	public Action OnDown;
 	public Action OnMove;
 	public static bool DOWN, UP;
+
+	private bool _canSendAction = true;
+
 	public void OnPointerDown(PointerEventData eventData)
 	{
-		DOWN = true;
-		UP = false;
-		Debug.Log("Down");
-		OnDown?.Invoke();
+		if(_canSendAction)
+		{
+			DOWN = true;
+			UP = false;
+			Debug.Log("Down");
+			OnDown?.Invoke();
+
+			_canSendAction = false;
+
+			SendSockets.SendData.Invoke();
+
+			DOWN = false;
+		}
 	}
 
 	public void OnPointerUp(PointerEventData eventData)
 	{
+		_canSendAction = true;
+
 		DOWN = false;
 		UP = true;
 		Debug.Log("Up");
 		OnUp?.Invoke();
+
+		SendSockets.SendData.Invoke();
+
+		UP = false;
 	}
 }
