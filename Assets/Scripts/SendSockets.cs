@@ -10,7 +10,7 @@ public class SendSockets : MonoBehaviour
 {
 	WebSocket ws;
 	SocketMessage sm = new SocketMessage();
-	public Gyroscope gyroscope;
+	//public Gyroscope gyroscope;
 
 	private bool stop_connecting = true;
 
@@ -81,8 +81,6 @@ public class SendSockets : MonoBehaviour
 			CLOSED = false;
 			StopConnecting();
 		}
-
-		Send();
 	}
 
 	//private IEnumerator UpdateData()
@@ -112,16 +110,16 @@ public class SendSockets : MonoBehaviour
 	public Action<bool> Completed;
 	public static Action SendData;
 
-	public void Send()
+	public void Send(Vector2 dir)
 	{
 		if (stop_connecting || ws == null || !ws.IsAlive)
 			return;
 
-		if (gyroscope.dir == Vector2.zero && !Gyroscope.RESET && !ButtonExtender.UP && !ButtonExtender.DOWN)
+		if (dir == Vector2.zero && !Gyroscope.RESET && !ButtonExtender.UP && !ButtonExtender.DOWN)
 			return;
 
-		sm.Coordinates.X2 = (sbyte)(gyroscope.dir.x * 20);
-		sm.Coordinates.Y2 = (sbyte)(gyroscope.dir.y * 20);
+		sm.Coordinates.X2 = (sbyte)(dir.x * 10);
+		sm.Coordinates.Y2 = (sbyte)(dir.y * 10);
 		sm.Coordinates.reset = Gyroscope.RESET;
 		sm.Coordinates.up = ButtonExtender.UP;
 		sm.Coordinates.down = ButtonExtender.DOWN;
@@ -131,6 +129,25 @@ public class SendSockets : MonoBehaviour
 		var s = JsonUtility.ToJson(sm);
 
 		ws.Send(s/*, Completed*/);
+	}
+
+	public void Send()
+	{
+		if (stop_connecting || ws == null || !ws.IsAlive)
+			return;
+
+		if (!Gyroscope.RESET && !ButtonExtender.UP && !ButtonExtender.DOWN)
+			return;
+
+		sm.Coordinates.reset = Gyroscope.RESET;
+		sm.Coordinates.up = ButtonExtender.UP;
+		sm.Coordinates.down = ButtonExtender.DOWN;
+
+		Gyroscope.RESET = false;
+
+		var s = JsonUtility.ToJson(sm);
+
+		ws.Send(s);
 	}
 
 	public static (string address, bool finded) GetLocalIPAddress()

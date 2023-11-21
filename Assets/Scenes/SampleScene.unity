@@ -153,10 +153,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 715436b8b9eeacd4fa6e70f80be02cdf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ss: {fileID: 80562735}
   speed: 10
   TouchPanel: {fileID: 677085953}
   ResetButton: {fileID: 662169934}
   dir: {x: 0, y: 0}
+  OldAttitude: {x: 0, y: 0, z: 0}
+  CoeffAttitude: {x: 0, y: 0, z: 0}
+  pPos: {x: 0, y: 0, z: 0}
+  accelerometer: {x: 0, y: 0, z: 0}
 --- !u!4 &80562734
 Transform:
   m_ObjectHideFlags: 0
@@ -185,7 +190,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b79067b5491e6174884efd80333b6eee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gyroscope: {fileID: 80562733}
   OPPENED: 0
   CLOSED: 0
 --- !u!1 &140694978
