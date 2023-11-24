@@ -1,147 +1,141 @@
 using System;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class Gyroscope : MonoBehaviour
 {
-	public SendSockets ss;
-	public float speed = 10;
-	public ButtonExtender TouchPanel;
-	public Button ResetButton;
-	public Vector2 dir;
-	public static bool RESET;
+    public SendSockets ss;
+    public float speed = 10;
+    public ButtonExtender TouchPanel;
+    public Button ResetButton;
+    public Vector2 dir;
+    public static bool RESET;
+    public Text compassText;
+    bool initialized;
 
-	public Vector3 OldAttitude;
-	public Vector3 CoeffAttitude;
+    public float XPos, YPos;
 
-	void Start()
-	{
-		Input.compass.enabled = true;
-		Input.gyro.enabled = true;
-		ResetButton.onClick.AddListener(delegate { RESET = true; /*transform.position = Vector3.zero;*/ });
+    public float startXPos, startYPos;
 
-		Debug.Log("INTERVAL: " + Input.gyro.updateInterval);
-		Input.gyro.updateInterval = 0.0001f;
+    void Start()
+    {
+        Input.compass.enabled = true;
+        Input.location.Start();
 
-		OldAttitude = Input.gyro.attitude.eulerAngles;
-	}
+        Input.gyro.enabled = true;
+        Input.gyro.updateInterval = 0.1f;
 
-	void CalibrateGyroscope()
-	{
-		int calibrateCount = 500;
-		for (int i = 0; i < calibrateCount; i++)
-		{
-			rotation = Quaternion.Slerp(rotation, Input.gyro.attitude, 0.1f);
-		}
-	}
-
-	public Vector3 pPos = Vector3.zero;
-
-	public Quaternion accelerometer1;
-	public Vector3 coeff;
-
-	Quaternion rotation;
-	private float gyroWeight = 0.98f;
-	public Vector3 Compass;
-
-	private void Update()
-	{
-		Compass = Input.gyro.rotationRate;
-		accelerometer1 = Input.gyro.attitude;
-		var euler = new Vector3(accelerometer1.x + 100, accelerometer1.y + 10, accelerometer1.z + 100);
-
-		coeff = OldAttitude - euler;
-		var m = 0.005f;
+        ResetButton.onClick.AddListener(delegate { RESET = true; ResetPosition(); });
 
 
-		if (Mathf.Abs(coeff.x) > 300)
-		{
-			coeff.x = 0;
-		}
 
-		if (Mathf.Abs(coeff.y) > 300)
-		{
-			coeff.y = 0;
-		}
+        ResetPosition();
+    }
 
-		if (Mathf.Abs(coeff.z) > 300)
-		{
-			coeff.z = 0;
-		}
+    private async void ResetPosition()
+    {
+        initialized = false;
+        await Task.Delay(1000);
 
-		if (Mathf.Abs(coeff.x) > m)
-		{
-			CoeffAttitude.x = coeff.x;
-		}
-
-		if (Mathf.Abs(coeff.y) > m)
-		{
-			CoeffAttitude.y = coeff.y;
-		}
-
-		if (Mathf.Abs(coeff.z) > m)
-		{
-			CoeffAttitude.z = coeff.z;
-		}
-
-		OldAttitude = euler;
-
-		dir = new Vector2(CoeffAttitude.z, CoeffAttitude.x) * 100;
-		ss.Send(dir);
-		CoeffAttitude = Vector3.zero;
+        transform.position = Vector3.zero;
 
 
-	}
+        startXPos = Input.compass.magneticHeading;
+        startYPos = -Input.acceleration.y;
+
+        if (startYPos > 200)
+            startYPos = startYPos - 360;
+
+        //   if (startXPos > 250)
+        //     startXPos = startXPos - 360;
+
+        await Task.Delay(1000);
+
+        initialized = true;
+    }
+
+    public Quaternion accelerometer1;
+    public Vector3 Compass, StartC;
+    public Vector3 RotationR;
+
+    private void Update()
+    {
+        if (!initialized)
+            return;
+        RotationR = Input.gyro.rotationRateUnbiased;
+        XPos = Input.compass.magneticHeading;
+        YPos = -Input.acceleration.y;
 
 
-	//void Update()
-	//{
+        if (YPos > 200)
+            YPos = YPos - 360;
 
-	//	dir = Vector2.zero;
+        //  if (XPos > 250)
+        //    XPos = XPos - 360;
+  
 
-	//	/////////////
-	//	Quaternion gyroRotation = Input.gyro.attitude;
+        var newYP = (YPos - startYPos) * 100;
 
-	//	// Чтение данных акселерометра
-	//	accelerometer = Input.gyro.attitude.eulerAngles;
-	//	//accelerometer = Vector3.Lerp(accelerometer, accel, Time.deltaTime * 5.0f);
+        if (MathF.Abs(transform.position.y - newYP) < 1)
+            newYP = transform.position.y;
 
-	//	// Фильтр Калмана для слияния данных гироскопа и акселерометра
-	//	rotation = Quaternion.Slerp(rotation, gyroRotation, gyroWeight);
+        transform.position = Vector3.Lerp(transform.position, new Vector3(XPos - startXPos, newYP, 0) / 3, Time.deltaTime * 5);
 
-	//	Vector3 gyroRateUnbiased = rotation * Input.gyro.rotationRateUnbiased;
+        compassText.text = (XPos - startXPos).ToString();
+        //  ss.Send(new Vector2(PP.z, PP.y));
 
-	//	dir.x = -gyroRateUnbiased.z;
-	//	dir.y = -gyroRateUnbiased.x;
-	//	/////////////
+    }
+    public Vector3 PP;
 
-	//	//dir.x = -Input.gyro.rotationRateUnbiased.z;
-	//	//dir.y = -Input.gyro.rotationRateUnbiased.x;
+    //void Update()
+    //{
 
-	//	var absX = Math.Abs(dir.x);
-	//	var absY = Math.Abs(dir.y);
+    //	dir = Vector2.zero;
 
-	//	if (absX < 0.02)
-	//		dir.x = 0;
+    //	/////////////
+    //	Quaternion gyroRotation = Input.gyro.attitude;
 
-	//	if (absY < 0.02)
-	//		dir.y = 0;
+    //	// Чтение данных акселерометра
+    //	accelerometer = Input.gyro.attitude.eulerAngles;
+    //	//accelerometer = Vector3.Lerp(accelerometer, accel, Time.deltaTime * 5.0f);
 
-	//	dir /= 2;
+    //	// Фильтр Калмана для слияния данных гироскопа и акселерометра
+    //	rotation = Quaternion.Slerp(rotation, gyroRotation, gyroWeight);
 
-	//	if (dir.x > 1.5)
-	//		dir.x *= 0.5f;
+    //	Vector3 gyroRateUnbiased = rotation * Input.gyro.rotationRateUnbiased;
 
-	//	if (dir.x < -1.5)
-	//		dir.x *= 0.5f;
+    //	dir.x = -gyroRateUnbiased.z;
+    //	dir.y = -gyroRateUnbiased.x;
+    //	/////////////
 
-	//	if (dir.y > 1.5)
-	//		dir.y *= 0.5f;
+    //	//dir.x = -Input.gyro.rotationRateUnbiased.z;
+    //	//dir.y = -Input.gyro.rotationRateUnbiased.x;
 
-	//	if (dir.y < -1.5)
-	//		dir.y *= 0.5f;
+    //	var absX = Math.Abs(dir.x);
+    //	var absY = Math.Abs(dir.y);
 
-	//	//if (Mathf.Abs(dir.x) > 1.5f || Mathf.Abs(dir.y) > 1.5f)
-	//	//	Debug.Log("X: " + dir.x + "  Y: " + dir.y);
-	//}
+    //	if (absX < 0.02)
+    //		dir.x = 0;
+
+    //	if (absY < 0.02)
+    //		dir.y = 0;
+
+    //	dir /= 2;
+
+    //	if (dir.x > 1.5)
+    //		dir.x *= 0.5f;
+
+    //	if (dir.x < -1.5)
+    //		dir.x *= 0.5f;
+
+    //	if (dir.y > 1.5)
+    //		dir.y *= 0.5f;
+
+    //	if (dir.y < -1.5)
+    //		dir.y *= 0.5f;
+
+    //	//if (Mathf.Abs(dir.x) > 1.5f || Mathf.Abs(dir.y) > 1.5f)
+    //	//	Debug.Log("X: " + dir.x + "  Y: " + dir.y);
+    //}
 }

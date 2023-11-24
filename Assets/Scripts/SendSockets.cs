@@ -118,8 +118,8 @@ public class SendSockets : MonoBehaviour
 		if (dir == Vector2.zero && !Gyroscope.RESET && !ButtonExtender.UP && !ButtonExtender.DOWN)
 			return;
 
-		sm.Coordinates.X2 = (sbyte)(dir.x * 10);
-		sm.Coordinates.Y2 = (sbyte)(dir.y * 10);
+		sm.Coordinates.X2 = (sbyte)(dir.x);
+		sm.Coordinates.Y2 = (sbyte)(dir.y);
 		sm.Coordinates.reset = Gyroscope.RESET;
 		sm.Coordinates.up = ButtonExtender.UP;
 		sm.Coordinates.down = ButtonExtender.DOWN;
