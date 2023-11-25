@@ -13,10 +13,12 @@ public class Gyroscope2 : MonoBehaviour
     {
         Input.compass.enabled = true;
         Input.location.Start();
+        Input.gyro.enabled = true;
     }
 
     private void Update()
     {
         compassText.text = Input.compass.magneticHeading.ToString();
+        transform.position = new Vector3(Input.compass.magneticHeading, -Input.acceleration.y * 100);
     }
 }

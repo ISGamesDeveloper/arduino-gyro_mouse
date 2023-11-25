@@ -18,13 +18,9 @@ public class Gyroscope : MonoBehaviour
 
     public float startXPos, startYPos;
 
-    void Start()
+    void Awake()
     {
-        Input.compass.enabled = true;
-        Input.location.Start();
 
-        Input.gyro.enabled = true;
-        Input.gyro.updateInterval = 0.1f;
 
         ResetButton.onClick.AddListener(delegate { RESET = true; ResetPosition(); });
 
@@ -36,53 +32,62 @@ public class Gyroscope : MonoBehaviour
     private async void ResetPosition()
     {
         initialized = false;
-        await Task.Delay(1000);
+        await Task.Delay(5000);
+
+        Input.compass.enabled = true;
+        Input.location.Start();
+
+        Input.gyro.enabled = true;
+        Input.gyro.updateInterval = 1f;
 
         transform.position = Vector3.zero;
-
+        await Task.Delay(1000);
 
         startXPos = Input.compass.magneticHeading;
-        startYPos = -Input.acceleration.y;
+        startYPos = -Input.acceleration.y * 100;
 
-        if (startYPos > 200)
-            startYPos = startYPos - 360;
-
-        //   if (startXPos > 250)
-        //     startXPos = startXPos - 360;
-
-        await Task.Delay(1000);
+        oldCompass = startXPos;
+        oldYpos = startYPos;
 
         initialized = true;
     }
 
     public Quaternion accelerometer1;
-    public Vector3 Compass, StartC;
+    public Vector3 StartC, Acceleration;
     public Vector3 RotationR;
-
+    public float Compass, oldCompass, oldYpos;
     private void Update()
     {
         if (!initialized)
             return;
         RotationR = Input.gyro.rotationRateUnbiased;
-        XPos = Input.compass.magneticHeading;
-        YPos = -Input.acceleration.y;
+        XPos = Input.gyro.attitude.z;//Input.compass.magneticHeading;
+        Compass = Input.compass.magneticHeading - startXPos;
+        Acceleration = Input.acceleration;
+        YPos = (-Input.acceleration.y * 100) - startYPos;
+        compassText.text = Input.compass.magneticHeading.ToString();
+        //  if (YPos > 300)
+          //  YPos = YPos - 360;
 
+        if (Compass - oldCompass > 350)
+            Compass = Compass - 360;
 
-        if (YPos > 200)
+        if (Compass - oldCompass < -350)
+            Compass = Compass + 360;
+
+        if (YPos - oldYpos > 350)
             YPos = YPos - 360;
 
-        //  if (XPos > 250)
-        //    XPos = XPos - 360;
-  
+        if (YPos - oldYpos < -350)
+            YPos = YPos + 360;
 
-        var newYP = (YPos - startYPos) * 100;
+        oldCompass = Compass;
+        oldYpos = YPos;
 
-        if (MathF.Abs(transform.position.y - newYP) < 1)
-            newYP = transform.position.y;
+        var pos = new Vector3(Compass / 5, YPos / 5, 0);
+        transform.position = Vector3.Lerp(transform.position, pos, Time.deltaTime * 10);
 
-        transform.position = Vector3.Lerp(transform.position, new Vector3(XPos - startXPos, newYP, 0) / 3, Time.deltaTime * 5);
-
-        compassText.text = (XPos - startXPos).ToString();
+        //compassText.text = (XPos - startXPos).ToString();
         //  ss.Send(new Vector2(PP.z, PP.y));
 
     }
@@ -96,11 +101,11 @@ public class Gyroscope : MonoBehaviour
     //	/////////////
     //	Quaternion gyroRotation = Input.gyro.attitude;
 
-    //	// Чтение данных акселерометра
+    //	// ?????? ?????? ?????????????
     //	accelerometer = Input.gyro.attitude.eulerAngles;
     //	//accelerometer = Vector3.Lerp(accelerometer, accel, Time.deltaTime * 5.0f);
 
-    //	// Фильтр Калмана для слияния данных гироскопа и акселерометра
+    //	// ?????? ??????? ??? ??????? ?????? ????????? ? ?????????????
     //	rotation = Quaternion.Slerp(rotation, gyroRotation, gyroWeight);
 
     //	Vector3 gyroRateUnbiased = rotation * Input.gyro.rotationRateUnbiased;
