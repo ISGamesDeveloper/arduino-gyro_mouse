@@ -14,22 +14,15 @@ public class Gyroscope : MonoBehaviour
     public Text compassText;
     bool initialized;
 
-    public float XPos, YPos;
-
     public float startXPos, startYPos;
 
-    void Awake()
+    void Start()
     {
-
-
         ResetButton.onClick.AddListener(delegate { RESET = true; ResetPosition(); });
-
-
-
-        ResetPosition();
+        Init();
     }
 
-    private async void ResetPosition()
+    private async void Init()
     {
         initialized = false;
         await Task.Delay(5000);
@@ -43,31 +36,30 @@ public class Gyroscope : MonoBehaviour
         transform.position = Vector3.zero;
         await Task.Delay(1000);
 
+        ResetPosition();
+
+        initialized = true;
+    }
+
+    private void ResetPosition()
+    {
         startXPos = Input.compass.magneticHeading;
         startYPos = -Input.acceleration.y * 100;
 
         oldCompass = startXPos;
         oldYpos = startYPos;
-
-        initialized = true;
     }
 
-    public Quaternion accelerometer1;
-    public Vector3 StartC, Acceleration;
-    public Vector3 RotationR;
-    public float Compass, oldCompass, oldYpos;
+    public float Compass, oldCompass, YPos, oldYpos;
+
     private void Update()
     {
         if (!initialized)
             return;
-        RotationR = Input.gyro.rotationRateUnbiased;
-        XPos = Input.gyro.attitude.z;//Input.compass.magneticHeading;
+
         Compass = Input.compass.magneticHeading - startXPos;
-        Acceleration = Input.acceleration;
         YPos = (-Input.acceleration.y * 100) - startYPos;
         compassText.text = Input.compass.magneticHeading.ToString();
-        //  if (YPos > 300)
-          //  YPos = YPos - 360;
 
         if (Compass - oldCompass > 350)
             Compass = Compass - 360;
